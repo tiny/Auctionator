@@ -481,14 +481,14 @@ function AtrSearch:AnalyzeResultsPage()
         end
 
         local OKfilterLevel = true
-        if (item._info.filterValue) then
+        if (item.filterValue) then
           --
           -- not filtered   -1 
           -- did not pass    0
           -- nominal pass    1
           -- passed filter   2
           --
-          OKfilterLevel = (item._info.filterValue ~= 0) ; -- passed the filter or wasn't filtered
+          OKfilterLevel = (item.filterValue ~= 0) ; -- passed the filter or wasn't filtered
         end
 
         if OKfilterLevel and OKitemLevel and ( self.exactMatchText == nil or zc.StringSame( item.name, self.exactMatchText )) then

@@ -191,26 +191,53 @@ local function level( item, arg1, arg2 )
    return ((item._info.itemMinLevel >= lo) and (item._info.itemMinLevel <= hi)) ;
 end
 
+-- 
+-- getItemStats:
+--  itemLink   proper item link
+--  stats      table, can be nil, will be returned
+--
+-- return:
+--   stats
+--
+function getItemStats( item, stats )
+   stats = stats or {} ;
+   table.wipe( stats ) ;
+   
+   -- get inherent stats
+   GetItemStats( item.itemLink, stats ) ;
+   
+   -- get suffix ids
+--   local _, _, item_string = item.itemLink:find( '^|c%x+|H(.+)|h%[.*%]' ) ;
+--   local parsed_link = { strsplit( ':', item_string ) };
+--   local suffix = parsed_link[ Auctionator.Constants.ItemLink.SUFFIX_ID ] or "" ;
+   
+   -- get bonus ids
+   -- get relic bonuses
+   
+   -- completed
+--   print( "str [".. tostring(item_string) .."]  suffix: ".. tostring(suffix) );
+   return stats ;
+end
+
 local _stat_set = {} ;
 local function hasStat( item, arg1 ) 
-  GetItemStats( item._info.itemLink, _stat_set ) ;
-  local rc = nil ;
+  getItemStats( item, _stat_set ) ;
+  local flag = false ;
   if (statMap[arg1] and bonusStats[statMap[ arg1 ]]) then
-    rc = _stat_set[ bonusStats[statMap[ arg1 ]] ] ;
+    flag = (_stat_set[ bonusStats[statMap[ arg1 ]] ] ~= nil) ;
   end
 
 --  kept for debug purposes
---  print( "-- ".. tostring(item.name) .." ") ;
+--  print( "-- ".. tostring(item.itemLink) ) ;
 --  for i,v in pairs(_stat_set) do
 --    print( "  [".. tostring(i) .."]  [".. tostring(v) .."]" ) ;
 --  end
---  print( "-- arg(".. tostring(arg1) ..")  rc: ".. tostring(rc) );
-  table.wipe( _stat_set ) ;
-  return rc ;
+--  print( "-- arg(".. tostring(arg1) ..")  flag: ".. tostring(flag) );
+  return flag ;
 end
 
 local function statDoes( item, arg1 ) 
-  GetItemStats( item._info.itemLink, _stat_set ) ;
+  GetItemStats( item.itemLink, _stat_set ) ;
   local rc = nil ;
   if (statMap[arg1] and bonusStats[statMap[ arg1 ]]) then
     rc = _stat_set[ bonusStats[statMap[ arg1 ]] ] ;
@@ -258,7 +285,16 @@ local function eval( item, exp, valueTab, loopValue)
       local arg1 = strtrim( string.gsub(exp, expr, '%1'), " " );
       local op   = strtrim( string.gsub(exp, expr, '%2'), " " );
       local arg2 = strtrim( string.gsub(exp, expr, '%3'), " " );
-      return oper[ op ]( eval( item, arg1, valueTab ), eval( item, arg2, valueTab )) ;
+--      return oper[ op ]( eval( item, arg1, valueTab ), eval( item, arg2, valueTab )) ;
+local a = eval( item, arg1, valueTab ) ;
+local b = eval( item, arg2, valueTab ) ;
+local c = oper[ op ]( a, b ) ;
+--print( "expr: "..
+--       "arg1(".. tostring(arg1) ..": ".. tostring(a) ..") "..
+--       "[".. tostring(op) .."] "..
+--       "arg2(".. tostring(arg2) ..": ".. tostring(b) ..") == ".. 
+--       tostring(c) );
+      return c ;
    end
    
    -- logical equals
@@ -301,7 +337,10 @@ local function eval( item, exp, valueTab, loopValue)
    -- negate
    if string.find(exp, '^!(.+)') then
       local arg1 = strtrim( string.gsub(exp, '^!(.+)', '%1'), " " );
-      return not eval( item, arg1, valueTab ) ;
+--      return not eval( item, arg1, valueTab ) ;
+      local f = not eval( item, arg1, valueTab ) ;
+--      print( "negate: [".. tostring(item.itemLink) .."] arg1(".. tostring(arg1) ..") == ".. tostring(f) );
+      return f ;
    end
    
    if (string.find(exp, "^is%('(.+)'%)")) then
@@ -327,7 +366,10 @@ local function eval( item, exp, valueTab, loopValue)
    
    if (string.find(exp, "^has%((.+)%)")) then
       local arg1 = strtrim( string.gsub(exp, "^has%((.+)%)", '%1'), " " );
-      return hasStat( item, arg1 ) ;
+--      return hasStat( item, arg1 ) ;
+      local f = hasStat( item, arg1 ) ;
+--      print( "has: [".. tostring(item.itemLink) .."] arg1(".. tostring(arg1) ..") == ".. tostring(f) );
+      return f ;
    end
    
    if (string.find(exp, "^does%((.+)%)")) then
@@ -360,7 +402,6 @@ function Atr_NewQuery ()
   query.prvPageInfo     = nil;
   query.numDupPages     = 0;
   _, query.totalAuctions    = -1;
-  AtrQuery:dictionaryFilterReset() ;
 
   return query;
 end
@@ -376,14 +417,6 @@ function AtrQuery:evaluateFilter( inventory, filter_text )
   end
   return 1 ; -- nominal acceptance
 end
-
-function AtrQuery:dictionaryFilterReset() 
-  if (AtrQuery._dictionary) then
-    for i,v in pairs(AtrQuery._dictionary) do
-      v.filterValue = -1 ;
-    end
-  end
-end 
 
 -- checkSearchFilter
 -- meant to evaluate the filter_text against the item in question and determine whether it passes
@@ -405,6 +438,9 @@ function AtrQuery:checkSearchFilter( inventory, filter_text )
   --
   AtrQuery._dictionary = AtrQuery._dictionary or {} ; 
   if (AtrQuery._dictionary[ inventory.itemId ] == nil) then
+    -- general information about the item.
+    -- does not have specific stat info on a particular item
+    --
     local info = {} ;
     info.itemName, 
     info.itemLink, 
@@ -417,16 +453,15 @@ function AtrQuery:checkSearchFilter( inventory, filter_text )
     info.itemEquipLoc, 
     info.itemTexture, 
     info.itemSellPrice = GetItemInfo( inventory.itemId ) ;
-    info.filterValue = -1 ;
 
     AtrQuery._dictionary[ inventory.itemId ] = info ;
   end
   if (inventory._info == nil) then
     inventory._info = AtrQuery._dictionary[ inventory.itemId ] ;
   end
---  inventory._info.filterValue = 
+--  inventory.filterValue = 
   local rc = AtrQuery:evaluateFilter( inventory, filter_text ) ;
-  inventory._info.filterValue = rc ;
+  inventory.filterValue = rc ;
   return rc ;
 end
 
@@ -470,7 +505,7 @@ function AtrQuery:CapturePageInfo( pagenum )
     auctionInfo.ownerFullName, 
     auctionInfo.saleStatus,
     auctionInfo.itemId,
-    auctionInfo.hasAllInfo    = GetAuctionItemInfo("list", x);
+    auctionInfo.hasAllInfo      = GetAuctionItemInfo("list", x);
     auctionInfo.itemLink        = GetAuctionItemLink("list", x);
     auctionInfo.filterValue     = -1 ; -- not checked yet
 
