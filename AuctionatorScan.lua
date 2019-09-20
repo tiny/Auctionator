@@ -480,7 +480,18 @@ function AtrSearch:AnalyzeResultsPage()
           numNilOwners = numNilOwners + 1
         end
 
-        if OKitemLevel and ( self.exactMatchText == nil or zc.StringSame( item.name, self.exactMatchText )) then
+        local OKfilterLevel = true
+        if (item._info.filterValue) then
+          --
+          -- not filtered   -1 
+          -- did not pass    0
+          -- nominal pass    1
+          -- passed filter   2
+          --
+          OKfilterLevel = (item._info.filterValue ~= 0) ; -- passed the filter or wasn't filtered
+        end
+
+        if OKfilterLevel and OKitemLevel and ( self.exactMatchText == nil or zc.StringSame( item.name, self.exactMatchText )) then
 
           if self.items[ item_link:IdString() ] == nil then
             self.items[ item_link:IdString() ] = Atr_FindScanAndInit( item_link:IdString(), item.name )
@@ -617,6 +628,12 @@ function Atr_IsCompoundSearch (searchString)
 
   Auctionator.Debug.Message( 'Atr_IsCompoundSearch', zc.StringContains (searchString, ">") or zc.StringContains (searchString, Auctionator.Constants.AdvancedSearchDivider) )
 
+  if (searchString:find("#") == 1) then
+    local p1 = searchString:find( ';' ) ;
+    local str = searchString:sub( p1+1, -1 ) ;
+    return (str:find('>') or zc.StringContains ( str, Auctionator.Constants.AdvancedSearchDivider)) ;
+  end
+
   return zc.StringContains (searchString, ">") or zc.StringContains (searchString, Auctionator.Constants.AdvancedSearchDivider);
 end
 
@@ -633,8 +650,17 @@ end
 
 -----------------------------------------
 
-function Atr_ParseCompoundSearch( searchString )
+function Atr_ParseCompoundSearch( searchString_ )
   local delimiter = Auctionator.Constants.AdvancedSearchDivider
+  local searchString = searchString_ ;
+  local qString = nil ;
+
+  -- strip off advanced query; '>' comparisons in the query were causing issues here
+  if (searchString:find( "#" ) == 1) then
+    local p1 = searchString_:find( ";") ;
+    qString = searchString_:sub( 1, p1-1 ) ;
+    searchString = searchString_:sub( p1, -1 )
+  end
 
   if zc.StringContains( searchString, ">" ) then
     delimiter = ">"
@@ -642,6 +668,8 @@ function Atr_ParseCompoundSearch( searchString )
 
   local queryString, filterKey, minLevel, maxLevel, minItemLevel, maxItemLevel =
     strsplit( delimiter, searchString )
+
+  queryString = qString or queryString ; -- re-assign if advanced queried removed above
 
   local filter = Auctionator.FilterLookup[ filterKey ]
 
@@ -732,6 +760,9 @@ function AtrSearch:Continue()
       { queryString, minLevel, maxLevel, self.current_page, nil, nil, false, exactMatch, filter },
       'QUERY AUCTION ITEMS PARAMS'
     )
+    if (string.find(queryString, "#")) then
+      queryString = "" ;
+    end
     QueryAuctionItems (queryString, minLevel, maxLevel, self.current_page, nil, nil, false, exactMatch, filter )
 
     self.query_sent_when  = gAtr_ptime;

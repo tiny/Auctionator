@@ -52,7 +52,6 @@ function AtrPane:DoSearch (searchText, IDstring, itemLink, rescanThreshold)
   Atr_ClearAll();   -- it's fast, might as well just do it now for cleaner UE
 
   self.UINeedsUpdate = false;   -- will be set when scan finishes
-
   self.activeSearch = Atr_NewSearch (searchText, IDstring, itemLink, rescanThreshold);
 
   if (IDstring) then

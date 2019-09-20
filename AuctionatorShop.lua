@@ -339,6 +339,7 @@ function Atr_Search_Onclick ()
 
   local currentPane = Atr_GetCurrentPane()
   local searchText = Atr_Search_Box:GetText()
+  currentPane._originalSearchText = searchText ;
 
   Atr_Search_Button:Disable()
   Atr_Adv_Search_Button:Disable()
@@ -913,6 +914,7 @@ function Atr_Adv_Search_Reset()
   Atr_AS_Searchtext:SetText ("");
 
   Atr_Dropdown_Refresh (Atr_ASDD_Class);
+  UIDropDownMenu_SetSelectedValue (Atr_ASDD_Class, 0);
   UIDropDownMenu_SetSelectedValue (Atr_ASDD_Class, 0);
   Atr_Dropdown_Refresh (Atr_ASDD_Subclass);
   UIDropDownMenu_SetSelectedValue (Atr_ASDD_Subclass, 0);

@@ -74,6 +74,10 @@ local function GenerateSubClasses( classID, parentName, parentKey )
   for index = 1, #subClassesTable do
     local subClassID = subClassesTable[ index ]
     local name = GetItemSubClassInfo( classID, subClassID )
+    --
+    -- classic protection
+    --
+    if parentKey==nil then parentKey=""; end
 
     local filter = { classID = classID, subClassID = subClassID }
     local subClass = Auctionator.Filter:new({

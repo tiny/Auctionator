@@ -273,6 +273,10 @@ end
 local function IsCataEnchanter()
   Auctionator.Debug.Message( 'IsCataEnchanter' )
 
+  if (GetProfessions == nil) then
+    return false ; -- could be classic
+  end
+
   local prof1, prof2 = GetProfessions()
 
   if (IsCataEnchanting (prof1) or IsCataEnchanting (prof2)) then
@@ -2649,9 +2653,10 @@ function Atr_ShowRecTooltip ()
 
       BattlePetToolTip_Show(speciesID, level, breedQuality, maxHealth, power, speed, name)
 
-      BattlePetTooltip:ClearAllPoints();
-      BattlePetTooltip:SetPoint("BOTTOMLEFT", Atr_RecommendItem_Tex, "BOTTOMRIGHT", 10, 0)
-
+      if (BattlePetTooltip) then  -- classic
+        BattlePetTooltip:ClearAllPoints();
+        BattlePetTooltip:SetPoint("BOTTOMLEFT", Atr_RecommendItem_Tex, "BOTTOMRIGHT", 10, 0)
+      end
     else
       GameTooltip:SetOwner(Atr_RecommendItem_Tex, "ANCHOR_RIGHT");
       GameTooltip:SetHyperlink (link, num);
@@ -2668,7 +2673,9 @@ function Atr_HideRecTooltip ()
 
   gCurrentPane.tooltipvisible = nil;
   GameTooltip:Hide();
-  BattlePetTooltip:Hide();
+  if (BattlePetTooltip) then  -- could be classic
+    BattlePetTooltip:Hide();
+  end
 
 end
 
@@ -3477,8 +3484,10 @@ function Atr_ShowLineTooltip (self)
 
     BattlePetToolTip_Show(speciesID, level, breedQuality, maxHealth, power, speed, name)
 
-    BattlePetTooltip:ClearAllPoints();
-    BattlePetTooltip:SetPoint("BOTTOMRIGHT", self, "TOPRIGHT", 10, 0)
+    if (BattlePetTooltip) then  -- classic
+      BattlePetTooltip:ClearAllPoints();
+      BattlePetTooltip:SetPoint("BOTTOMRIGHT", self, "TOPRIGHT", 10, 0)
+    end
 
   else   -- normal case
 
@@ -3502,7 +3511,9 @@ function Atr_HideLineTooltip (self)
   Auctionator.Debug.Message( 'Atr_HideLineTooltip', self )
 
   GameTooltip:Hide();
-  BattlePetTooltip:Hide();
+  if (BattlePetTooltip) then  -- could be classic
+    BattlePetTooltip:Hide();
+  end
 end
 
 

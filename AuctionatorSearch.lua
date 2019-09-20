@@ -27,7 +27,11 @@ function Auctionator.Search:Start()
   Auctionator.Debug.Message( 'Auctionator.Search:Start' )
 
   if CanSendAuctionQuery() then
-    QueryAuctionItems( self.query:ToParams( self.currentPage ) )
+    local queryString = self.query:ToParams( self.currentPage );
+    if (string.find(queryString, "#") == 1) then
+      queryString = "" ;
+    end
+    QueryAuctionItems( queryString )
   else
     Auctionator.Debug.Message( 'CanSendAuctionQuery FALSE' )
   end
